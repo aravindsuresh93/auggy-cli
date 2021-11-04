@@ -1,0 +1,11 @@
+version: "3"
+services:
+  auggy-cli:
+    image:  auggy-cli
+    container_name: auggy-cli
+    volumes:
+      - /Users/aravind/Desktop/Projects/auggy-cli:/app/auggy-cli
+    tty: true   
+    ports:
+      - 8090:8090
+  
