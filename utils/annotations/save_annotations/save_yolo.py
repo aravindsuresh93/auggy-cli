@@ -1,6 +1,4 @@
-from utils.open_annotations.open_yolo import convert_to_yolo
-
-
+from utils.annotations.open_annotations.open_yolo import convert_to_yolo
 import os
 
 class SaveTXT:

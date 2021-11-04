@@ -1,0 +1,10 @@
+Save : 
+- install labelimg
+- Change xmin/ ymin in df to 0 and save and see
+- Test save annotations
+- Consume df for save
+
+Augment : 
+- Consume df for save
+- Add extra rows in df for augmented data
+- Test actual augmentation
