@@ -1,5 +1,5 @@
 Save : 
-- install labelimg
+- install labelimg X
 - Change xmin/ ymin in df to 0 and save and see
 - Test save annotations
 - Consume df for save
