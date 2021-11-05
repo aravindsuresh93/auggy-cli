@@ -37,10 +37,10 @@ class TextFile:
                 bbox_height = float(data[4]) * height
                 center_x = float(data[1]) * width
                 center_y = float(data[2]) * height
-                xmin = int(center_x - (bbox_width / 2))
-                ymin = int(center_y - (bbox_height / 2))
-                xmax = int(center_x + (bbox_width / 2))
-                ymax = int(center_y + (bbox_height / 2))
+                xmin = int(center_x - (bbox_width / 2.0))
+                ymin = int(center_y - (bbox_height / 2.0))
+                xmax = int(center_x + (bbox_width / 2.0))
+                ymax = int(center_y + (bbox_height / 2.0))
                 self.bounding_box.append(BoundingBox(label, xmin, ymin, xmax, ymax))
         except Exception as e:
             self.error = f'{fpath} {e}' 
