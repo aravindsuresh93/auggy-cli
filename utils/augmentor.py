@@ -1,4 +1,8 @@
 import albumentations as A
+import pandas as pd
+import cv2
+import os
+import random
 
 
 
@@ -11,37 +15,37 @@ class Augment:
     """
 
     def Blur(self, blur_limit):
-        self.transform = A.Compose([A.Blur(blur_limit=(3, blur_limit), p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.Blur(blur_limit=(3, blur_limit), p=1)], bbox_params=self.bbox_params)
 
     def Clahe(self, clip_limit):
-        self.transform = A.Compose([A.CLAHE(clip_limit=clip_limit, tile_grid_size=(8, 8), p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.CLAHE(clip_limit=clip_limit, tile_grid_size=(8, 8), p=1)], bbox_params=self.bbox_params)
 
     def ChannelDropout(self, channel_drop_range, fill_value):
-        self.transform = A.Compose([A.ChannelDropout(channel_drop_range=channel_drop_range,fill_value= fill_value, p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.ChannelDropout(channel_drop_range=channel_drop_range,fill_value= fill_value, p=1)], bbox_params=self.bbox_params)
 
     def ChannelShuffle(self):
-        self.transform = A.Compose([A.ChannelShuffle(p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.ChannelShuffle(p=1)], bbox_params=self.bbox_params)
 
     def ChannelShuffle(self, brightness, contrast, saturation, hue):
-        self.transform = A.Compose([A.ChannelShuffle(brightness=brightness, contrast=contrast,saturation=saturation, hue=hue, p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.ChannelShuffle(brightness=brightness, contrast=contrast,saturation=saturation, hue=hue, p=1)], bbox_params=self.bbox_params)
     
     def Downscale(self, scale_min, scale_max):
-        self.transform = A.Compose([A.Downscale(scale_min=scale_min, scale_max=scale_max,p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.Downscale(scale_min=scale_min, scale_max=scale_max,p=1)], bbox_params=self.bbox_params)
 
     def Equalize(self, mode, by_channels):
-        self.transform = A.Compose([A.Equalize(mode=mode, by_channels=by_channels, p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.Equalize(mode=mode, by_channels=by_channels, p=1)], bbox_params=self.bbox_params)
     
     def FancyPCA(self, alpha):
-        self.transform = A.Compose([A.FancyPCA(alpha = alpha)], bbox_params=self.bbox_params)   
+        return A.Compose([A.FancyPCA(alpha = alpha)], bbox_params=self.bbox_params)   
 
     def GaussNoise(self, var_limit, mean, per_channel):
-        self.transform = A.Compose([A.GaussNoise(var_limit = var_limit, mean = mean, per_channel=per_channel, p=1)], bbox_params=self.bbox_params)
+        return A.Compose([A.GaussNoise(var_limit = var_limit, mean = mean, p=1)], bbox_params=self.bbox_params)
 
     def GlassBlur(self, sigma, max_delta, iterations, mode, p=1):
-        self.transform = A.Compose([A.GlassBlur(sigma = sigma, max_delta = max_delta, iterations=iterations, mode = mode, p=1)], bbox_params=self.bbox_params)        
+        return A.Compose([A.GlassBlur(sigma = sigma, max_delta = max_delta, iterations=iterations, mode = mode, p=1)], bbox_params=self.bbox_params)        
 
     def GaussianBlur(self, blur_limit, sigma_limit):
-        self.transform = A.Compose([A.GaussianBlur(blur_limit = blur_limit, sigma_limit = sigma_limit,p=1)], bbox_params=self.bbox_params)        
+        return A.Compose([A.GaussianBlur(blur_limit = blur_limit, sigma_limit = sigma_limit,p=1)], bbox_params=self.bbox_params)        
          
 
     """
@@ -49,44 +53,95 @@ class Augment:
     """
     def response(self, transformed):
         boxes = []
-        for e, box in enumerate(transformed["bboxes"]):
-            box += transformed["category_ids"][e]
-            boxes.append(box)
+        labels = []
+        for box in transformed["bboxes"]:
+            boxes.append(box[:4])
+            labels.append(box[-1])
         image = transformed['image']
-        return image, boxes
+        return image, boxes, labels
 
     def request(self, transform_data):
-        self.transformation_type = transform_data.get("type", "")
+        self.transformation_type = transform_data.get("transformation_type", "")
         assert len(self.transformation_type), "Transformation type not available"
 
-        self.transformation_parameters = transform_data.get("parameters", {})
-        assert len(self.transformation_parameters), "Transformation parameters not available"
+        self.transformation_parameters = transform_data.get("transformation_parameters", {})
+        # assert len(self.transformation_parameters), "Transformation parameters not available"
 
     def get_arg(self, argname, default_val):
         return self.transformation_parameters.get(argname, default_val)
 
 
-    def process(self, image, boxes, transform_data):
+    def augment(self, image, boxes, transform_data):
+        
         self.request(transform_data)
 
         switcher = {
-            "Blur" : self.Blur(blur_limit=self.get_arg("blur_limit", 3)),
-            "Clahe" : self.Clahe(self.get_arg("clip_limit", 4)),
-            "ChannelDropout" : self.ChannelDropout(self.get_arg("channel_drop_range", (1, 1)), self.get_arg("fill_value", 0)),
-            "ChannelShuffle" : self.ChannelShuffle(),
-            "ColorJitter" : self.ColorJitter(self.get_arg("brightness", 0.2), self.get_arg("contrast", 0.2),self.get_arg("saturation", 0.2),self.get_arg("hue", 0.2)),
-            "Downscale" : self.Downscale(self.get_arg("scale_min", 0.25), self.get_arg("scale_max", 0.25)),
-            "Equalize" : self.Equalize(self.get_arg("mode", "cv"), self.get_arg("by_channels", True)),
-            "FancyPCA" : self.FancyPCA(self.get_arg("alpha", 0.1)),
-            "GaussNoise" : self.GaussNoise(self.get_arg("var_limit", [10,50]), self.get_arg("mean", 0), self.get_arg("per_channel", True)),
-            "GaussianBlur" : self.GaussianBlur(self.get_arg("blur_limit", (3, 7)), self.get_arg("sigma_limit",0)),
-            "GlassBlur" : self.GaussianBlur(self.get_arg("sigma", 0.7), self.get_arg("max_delta", 4), self.get_arg("iterations", 2), self.get_arg("mode", "fast"))
+            "Blur" : [self.Blur, (self.get_arg("blur_limit", 7),)],
+            "Clahe" : [self.Clahe, (self.get_arg("clip_limit", 4),)],
+            "ChannelDropout" : [self.ChannelDropout, (self.get_arg("channel_drop_range", (1, 1)), self.get_arg("fill_value", 0))],
+            # "ChannelShuffle" : self.ChannelShuffle(),
+            # "ColorJitter" : self.ColorJitter(self.get_arg("brightness", 0.2), self.get_arg("contrast", 0.2),self.get_arg("saturation", 0.2),self.get_arg("hue", 0.2)),
+            "Downscale" : [self.Downscale, (self.get_arg("scale_min", 0.25), self.get_arg("scale_max", 0.25))],
+            "Equalize" : [self.Equalize, (self.get_arg("mode", "cv"), self.get_arg("by_channels", True))],
+            "FancyPCA" : [self.FancyPCA, (self.get_arg("alpha", 0.1),)],
+            "GaussNoise" : [self.GaussNoise, (self.get_arg("var_limit", [10,50]), self.get_arg("mean", 0), self.get_arg("per_channel", True))],
+            "GaussianBlur" : [self.GaussianBlur, (self.get_arg("blur_limit", (3, 7)), self.get_arg("sigma_limit",0))],
+            "GlassBlur" : [self.GlassBlur, (self.get_arg("sigma", 0.7), self.get_arg("max_delta", 4), self.get_arg("iterations", 2), self.get_arg("mode", "fast"))]
         }
 
-        ok = switcher.get(self.transformation_type, 0)
-        if ok:
-            transformed = self.transform(image=image, bboxes=boxes)
-        return self.response(transformed)
+
+        if self.transformation_type in switcher.keys():
+            func, args = switcher.get(self.transformation_type)
+            transform =  func(*args) #init transform
+            transformed = transform(image=image, bboxes=boxes)
+            return self.response(transformed)
+
+
+    def process(self, df, input_images_folder, output_images_folder, transformation_types = [], random_select = False):
+
+        for image_name in df['image_name'].unique():
+            name, _ = os.path.splitext(image_name)
+            sdf = df[df['image_name'] == image_name]
+            boxes = []
+            img = cv2.imread(os.path.join(input_images_folder, image_name))
+            for _, row in sdf.iterrows():
+                xmin, ymin, xmax, ymax = row['box_xmin'], row['box_ymin'], row['box_xmax'], row['box_ymax']
+                boxes.append([xmin, ymin, xmax, ymax, row['label']])
+
+
+            for transformation_type in transformation_types:
+                image, boxes, labels = self.augment(img, boxes, {'transformation_type' : transformation_type})
+                print(boxes, labels)
+
+                #Image Save
+                augmented_name = f'{name}_{transformation_type}'
+                augmented_image_name = augmented_name + '.jpg'
+                
+                cv2.imwrite(os.path.join(output_images_folder, augmented_image_name), image)
+                height, width, depth = image.shape
+
+                for box, label in zip(boxes, labels):
+                    data = {'label' : label, 
+                            'box_xmin' : box[0],
+                            'box_ymin' : box[1],
+                            'box_xmax' : box[2],
+                            'box_ymax' : box[3],
+                            'box_h' : box[3] - box[1],
+                            'box_w' : box[2] - box[0],
+                            'image_name' : augmented_image_name,
+                            'annotation_path' : "",
+                            'image_width': width,
+                            'image_height' :height,
+                            'image_depth' :depth
+                            }
+
+                    sdf = pd.DataFrame(data, [0])
+                    df = df.append(sdf)
+
+            # Save/ update df code
+
+
+
 
 
 """
