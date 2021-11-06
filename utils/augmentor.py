@@ -111,7 +111,6 @@ class Augment:
 
             for transformation_type in transformation_types:
                 image, boxes, labels = self.augment(img, boxes, {'transformation_type' : transformation_type})
-                print(boxes, labels)
 
                 #Image Save
                 augmented_name = f'{name}_{transformation_type}'

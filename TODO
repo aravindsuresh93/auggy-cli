@@ -1,22 +1,10 @@
-Save : 
-- install labelimg X
-- Test save annotations
-- Change xmin/ ymin in df to 0 and save and see
-- Consume df for save
-
 Augment : 
-- Consume df for save
-- Add extra rows in df for augmented data
-- Test actual augmentation
+- Test actual augmentation **recurring task
+
+CLI : (Make into a cli consumable format with YAML as input to enable transformations)
+- YAML input for transformation selection
+- Basic CLI styling
+- CLI main loops
 
 
-docker run -it \
--e DISPLAY=unix$DISPLAY \
---workdir=/labelImg \
---volume="/Users/aravind/Desktop/Projects/labelImg":/labelImg \
---volume="/etc/group:/etc/group:ro" \
---volume="/etc/passwd:/etc/passwd:ro" \
---volume="/etc/shadow:/etc/shadow:ro" \
---volume="/etc/sudoers.d:/etc/sudoers.d:ro" \
--v /tmp/.X11-unix:/tmp/.X11-unix \
-tzutalin/py2qt4
+
