@@ -97,7 +97,10 @@ class Augment:
             return self.response(transformed)
 
 
-    def process(self, df, input_images_folder, output_images_folder, transformation_types = [], random_select = False):
+    def process(self, df, input_images_folder, output_images_folder, transformation_types, random_select = False):
+        """
+        
+        """
 
         for image_name in df['image_name'].unique():
             name, _ = os.path.splitext(image_name)
